@@ -1,27 +1,32 @@
-version: "3"
+version: "3.7"
 
 services:
-  discord-musicbot:
-    build: .
-    image: discord-musicbot:latest
-    container_name: discord-musicbot
-    restart: unless-stopped
-    networks:
-      - lavalink-net
-    depends_on:
-      - lavalink
-    volumes:
-      - ./config.js:/usr/src/app/config.js:ro
-
   lavalink:
-    image: fredboat/lavalink:439f122
-    container_name: music-lavalink
-    hostname: lavalink
+    # pin the image version to Lavalink v4
+    image: ghcr.io/lavalink-devs/lavalink:fdeadb0-alpine
+    container_name: lavalink
     restart: unless-stopped
-    networks:
-      - lavalink-net
+    environment:
+      # set Java options here
+      - _JAVA_OPTIONS=-Xmx6G
+      # set lavalink server port
+      - SERVER_PORT=2333
+      # set password for lavalink
+      - LAVALINK_SERVER_PASSWORD=NomNom&Robin
     volumes:
-      - ./docker/application.yml:/opt/Lavalink/application.yml:ro
-
+      # mount application.yml from the same directory or use environment variables
+      - ./application.yml:/opt/Lavalink/application.yml
+      # persist plugins between restarts, make sure to set the correct permissions (user: 322, group: 322)
+      - ./plugins/:/opt/Lavalink/plugins/
+    networks:
+      - lavalink
+    expose:
+      # lavalink exposes port 2333 to connect to for other containers (this is for documentation purposes only)
+      - 2333
+    ports:
+      # you only need this if you want to make your lavalink accessible from outside of containers
+      - "2333:2333"
 networks:
-  lavalink-net:
+  # create a lavalink network you can add other containers to, to give them access to Lavalink
+  lavalink:
+    name: lavalink
